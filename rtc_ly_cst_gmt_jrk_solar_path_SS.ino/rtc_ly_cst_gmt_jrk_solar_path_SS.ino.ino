@@ -1,9 +1,9 @@
 
 
-//RTC (Real Time Clock), Solar Path Calculator and Linear Actuator Driver
+//RTC (Real Time Clock), Solar Path Calculator and Linear Actuator Driver Prototype for WPU (William Penn Uiversity) Solar Panel
 //Solar equations from: Solar Calculation Details National Oceanic & Atmospheric Administration (NOAA) and  http://www.jgiesen.de/astro/suncalc/calculations.htm 
 //RTC copyrighted (C) 2011 but open source code from:  http://bildr.org/?s=rtc
-//Solar Path calcualtion software method written by Andrew Stevens and Professor Jon Stevens for APCS 370, Systems Implmenation Project
+//latest version of the Solar Path calcualtion software method written by Professor Jon Stevens and Andrew Stevens for APCS 370, Systems Implmenation Project
 //APCS 370 Scrum Team:  Dani Breon, Jerry Groom, Will Smead, Curt Coughlin, Marshawn Lacy, and Brian Pittman
 //Professor Mike Doolan, Instructor Andrew Nieuwsma and previous classes of APCS 360 and 370 developed earlier versions, 2012 - 14.
 //Spring Term 2015, APCS Department, William Penn University
@@ -14,7 +14,7 @@
   byte zero = 0x00; 
   
   int    monthDay = 0;      int    minute = 0;        int year = 0;        int weekDay;  
-  int    hour = 0;          int    month = 0;         int second;   
+  int    hour = 0;          int    month = 0;         int second;          
   double offset = 0;        double doy = 0;           int targetX = 0;     int targetY = 0;
   double lat = 41.3;        double longitude = 92.6; //actually -92.6
   double radDate = 0;       double eqtime = 0;        
@@ -26,8 +26,9 @@
 
 void setup(){
    Wire.begin();
-   Serial.begin(9600);\
+   Serial.begin(9600);
    Serial1.begin(9600);
+   Serial.println("Altitude,Azimuth,Sun Rise,Sun Set,Sun Noon,Date,Time,DOW,DOY,Target X,Target Y,DEC Time");
 }
 
 void loop(){ 
@@ -39,8 +40,9 @@ void loop(){
   azm(hour, minute);
   MoveX(targetX);
   MoveY(targetY);
-  Serial.print("Decimal Time  \t  "); Serial.println(hour + minute/60.0); Serial.println("");
-   delay(10000);
+  //Serial.print("Decimal Time  \t  "); 
+  Serial.print(hour + minute/60.0);     Serial.println("");
+  delay(10000);
 }
 
 void getDate(){ 
@@ -51,14 +53,16 @@ void getDate(){
 }
   void printDate(){
   //print the date EG   3/1/11 23:59:59
-  if (month < 10)    Serial.print("0");       Serial.print(month);      Serial.print("/"); 
-  if (monthDay < 10) Serial.print("0");       Serial.print(monthDay);   Serial.print("/");    
-                     Serial.print(year);      Serial.print(" ");
-  if (hour < 10)     Serial.print("0");       Serial.print(hour);       Serial.print(":");
-  if (minute < 10)   Serial.print("0");       Serial.print(minute);     Serial.print(":");
-  if (second < 10)   Serial.print("0");       Serial.print(second);     Serial.print("  ");   
-                     Serial.print("Day of Week ");                      Serial.print(dayofweek(weekDay));
-                     Serial.print("  DOY ");  Serial.println(doy);      Serial.println("");
+  if (month < 10)    Serial.print("0");       Serial.print(month);      Serial.print("/");   
+  if (monthDay < 10) Serial.print("0");       Serial.print(monthDay);   Serial.print("/");   
+                     Serial.print(year);      Serial.print(",");
+  if (hour < 10)     Serial.print("0");       Serial.print(hour);       Serial.print(":");   
+  if (minute < 10)   Serial.print("0");       Serial.print(minute);     Serial.print(":");  
+  if (second < 10)   Serial.print("0");       Serial.print(second);     Serial.print(","); 
+                     //Serial.print("Day of Week ");                      
+                     Serial.print(dayofweek(weekDay));  Serial.print(",");
+                     //Serial.print("  DOY ");  
+                     Serial.print(doy);       Serial.print(",");        
  }
 
 void solar_path(){
@@ -79,33 +83,40 @@ void solar_path(){
 
   zenith = sin(d2r*lat)*sin(d2r*declin)+cos(d2r*lat)*cos(d2r*declin)*cos(d2r*ha);
   zenith = acos(zenith)/d2r;  altitude = 90-zenith;// altitude
-   Serial.print("altitude  \t "  ); Serial.println( altitude );
+   //Serial.print("altitude  \t "  ); 
+   Serial.print( altitude );  Serial.print(",");
 
   azimuth = -(sin(d2r*lat)*cos(d2r*zenith) - sin(d2r*declin))/(cos(d2r*lat)*sin(d2r*zenith));
   azimuth = acos(azimuth)/d2r;
   if(ha>=0) azimuth = 360 - azimuth;
-   Serial.print("azimuth  \t " ); Serial.println( azimuth  );
+   //Serial.print("azimuth  \t " ); 
+   Serial.print( azimuth  );  Serial.print(",");
 
   hars = cos(d2r*90.833)/(cos(d2r*lat)*cos(d2r*declin)) - tan(d2r*lat)*tan(d2r*declin);  hars = acos(hars)/d2r;
-   //Serial.print("hars " ); Serial.println( hars  );
+   //Serial.print("hars " ); Serial.print( hars  );
 
   sun_rise = 720 + 4*(longitude - hars) - eqtime; sun_rise = sun_rise/60 + offset; 
-   Serial.print("sun_rise \t " ); Serial.println( sun_rise );
+   //Serial.print("sun_rise \t " ); 
+   Serial.print( sun_rise );   Serial.print(",");
 
   sun_set = 720 + 4*(longitude + hars) - eqtime; sun_set = sun_set/60 + offset; 
-   Serial.print("sun_set \t " ); Serial.println( sun_set );
+   //Serial.print("sun_set \t " ); 
+   Serial.print( sun_set );    Serial.print(",");
 
   snoon = 720 - 4 * -longitude - eqtime; snoon = snoon / 60 + offset; 
-   Serial.print("sun_noon \t " ); Serial.println( snoon ); Serial.println("");
+   //Serial.print("sun_noon \t " ); 
+   Serial.print( snoon );      Serial.print(",");
 }
  
 void alt(int hour, int minute) {
   if(hour + minute/60.0 <= sun_rise || hour + minute/60.0 >= sun_set) {targetY = 150;}
-    else {targetY = altitude/90.0 * 3600.0 + 200;} Serial.print( "Target Y  \t  " ); Serial.println(targetY);
+    else {targetY = altitude/90.0 * 3600.0 + 150;} //Serial.print( "Target Y  \t  " ); 
+    Serial.print(targetY);    Serial.print(",");
 }
 void azm(int hour, int minute) {
   if(hour + minute/60.0 <= sun_rise || hour + minute/60.0 >= sun_set) {targetX = 150;}
-    else {targetX = azimuth/360.0 * 3600.0 + 200;} Serial.print( "Target X  \t  " ); Serial.println(targetX); Serial.println("");
+    else {targetX = azimuth/360.0 * 3600.0 + 150;} //Serial.print( "Target X  \t  " ); 
+    Serial.print(targetX);    Serial.print(",");
 }
 
 //sets the new target for the azimuth JRK12v12 controller, this uses pololu high resulution protocol
@@ -154,11 +165,11 @@ String dayofweek(int weekDay){
 
 void setDateTime(){
   byte second =      30; //0-59 
-  byte minute =      17; //0-59
+  byte minute =      00; //0-59
   byte hour =        19; //0-23
-  byte weekDay =      1; //1-7
-  byte monthDay =    15; //1-31
-  byte month =        3; //1-12
+  byte weekDay =      3; //1-7
+  byte monthDay =    7; //1-31
+  byte month =        4; //1-12
   byte year  =       15; //0-99
 
   Wire.beginTransmission(DS3231_ADDRESS); Wire.write(zero); //start Oscillator  
@@ -174,6 +185,10 @@ byte decToBcd(byte val){ // Convert normal decimal numbers to binary coded decim
 byte bcdToDec(byte val){ // Convert binary coded decimal to normal decimal numbers
   return ( (val/16*10) + (val%16) );
 }
+
+
+  
+ 
 
 
 
